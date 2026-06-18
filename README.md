@@ -30,9 +30,11 @@ dependencies {
 
 ## Hintergrundinformationen: DICOM-Format
 
+DICOM steht für „Digital Imaging and Communications in Medicine“ und ist ein internationaler Standard für medizinische Bilddaten und die dazugehörigen Metadaten. Er wird vor allem genutzt, damit Geräte und Software verschiedener Hersteller medizinische Bilder wie Röntgen-, CT-, MRT- oder Ultraschallaufnahmen austauschen und gemeinsam verarbeiten können. DICOM ist nicht nur ein Bildformat, sondern verbindet Bild, Beschreibung und Kommunikationsregeln in einem gemeinsamen Standard: Es ist ein sogenanntes Container-Format, in dem eine DICOM-Datei mehrere Elemente wie Metadaten (z.B. Patientendaten, Untersuchungsdatum, Geräteeinstellungen und weitere technische Attribute) oder auch eine Reihe von Bildern (z.B. unterschiedliche Bildtiefen bei einem MRT-Scan) enthalten kann. Alle Daten sind in einer strukturierten Liste von Datenelementen organisiert, die zusammen den Datensatz bilden. Kurz gesagt: DICOM sorgt dafür, dass medizinische Bilddaten standardisiert gespeichert, übertragen und archiviert werden können.
+
 ## Einlesen von DICOM-Dateien
 
-Der folgende Codeabschnitt zeigt Ihnen, wie die Bilddaten aus einer DICOM-Datei eingelesen werden können (Sie können Beispiele auch selber ergoogeln, beispielsweise [dieses Tutorial](https://saravanansubramanian.com/blog/extractdicomimagedata/)):
+Der folgende Codeabschnitt zeigt Ihnen, wie die Bilddaten aus einer DICOM-Datei eingelesen werden können (Sie können Beispiele auch selber ergoogeln, beispielsweise [dieses Tutorial](https://saravanansubramanian.com/blog/extractdicomimagedata/)) - wir kümmern uns in diesem Projekt nur um Bildreihen, nicht um die Metadaten dazu:
 
 ```java
 import com.pixelmed.dicom.AttributeList;
