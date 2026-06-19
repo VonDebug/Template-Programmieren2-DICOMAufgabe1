@@ -5,6 +5,7 @@ import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +15,7 @@ public class DICOMImage {
 
     public String name;
     public  DICOMFrame[] allDicomFrames;
+    public enum ImageType {ORIGINAL, EDGE}
 
     public DICOMImage(File infile, String name) throws DicomException, IOException {
         this.name = name;
@@ -37,7 +39,26 @@ public class DICOMImage {
 
     }
 
-    public void writeFrames(int from, int to, boolean original, boolean edges, double edgeLightnessCutoff) {
+    public void writeFrames(int from, int to, ImageType imageType, double edgeLightnessCutoff) throws IOException {
+
+        String fileNameConvention = (imageType == ImageType.ORIGINAL)? ".png" : "_edges.png";
+
+
+
+        for(int i = from; i < to; i++){
+
+            File file = new File(i+fileNameConvention);
+            if(imageType == ImageType.ORIGINAL){
+            ImageIO.write(this.allDicomFrames[i].getImage(), "PNG", file);
+
+            }
+            else{
+                ImageIO.write(this.allDicomFrames[i].getEdges(edgeLightnessCutoff), "PNG", file);
+            }
+
+        }
+
+
     }
 
     private void writeImage(BufferedImage image, String filename) {

@@ -2,12 +2,14 @@ package org.htw.prog2.aufgabe2;
 
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 public class DICOMFrame {
     private static final int[][] S_x = new int[][]{new int[]{-1,0,1}, new int[]{-2,0,2}, new int[]{-1,0,1}};
     private static final int[][] S_y = new int[][]{new int[]{-1,-2,-1}, new int[]{0,0,0}, new int[]{1,2,1}};
+
     private final BufferedImage rawImage;
-    private BufferedImage imageEdges;
+    private BufferedImage finalImage;
     private double brightness;
     private boolean detectEdgesCompleted = false;
 
@@ -31,34 +33,53 @@ public class DICOMFrame {
     }
 
     private void detectEdges() {
+        int maxScale = 255;
+        ArrayList<Integer> pixels = new ArrayList<>();
 
         int width = this.rawImage.getWidth();
         int height = this.rawImage.getHeight();
-        BufferedImage edgeImg = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 
-        for(int y = 0; y < height; y++){
+        BufferedImage finalImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 
-            for(int x = 0; x < width; x++) {
+        for(int y = 0; y < height-2; y++){
+
+            for(int x = 0; x < width-2; x++) {
 
                 int pixelValueX =
-                        S_x[0][0] * getGrayscalePixel(this.rawImage, x, y) + S_x[0][1] * getGrayscalePixel(this.rawImage, x + 1, y) + S_x[0][2] * getGrayscalePixel(this.rawImage, x + 2, y) +
+                                S_x[0][0] * getGrayscalePixel(this.rawImage, x, y) + S_x[0][1] * getGrayscalePixel(this.rawImage, x + 1, y) + S_x[0][2] * getGrayscalePixel(this.rawImage, x + 2, y) +
                                 S_x[1][0] * getGrayscalePixel(this.rawImage, x, y + 1) + S_x[1][1] * getGrayscalePixel(this.rawImage, x + 1, y + 1) + S_x[1][2] * getGrayscalePixel(this.rawImage, x + 2, y + 1) +
                                 S_x[2][0] * getGrayscalePixel(this.rawImage, x, y + 2) + S_x[2][1] * getGrayscalePixel(this.rawImage, x + 1, y + 2) + S_x[2][2] * getGrayscalePixel(this.rawImage, x + 2, y + 2);
 
                 int pixelValueY =
-                        S_y[0][0] * getGrayscalePixel(this.rawImage, x, y) + S_y[0][1] * getGrayscalePixel(this.rawImage, x + 1, y) + S_y[0][2] * getGrayscalePixel(this.rawImage, x + 2, y) +
+                                S_y[0][0] * getGrayscalePixel(this.rawImage, x, y) + S_y[0][1] * getGrayscalePixel(this.rawImage, x + 1, y) + S_y[0][2] * getGrayscalePixel(this.rawImage, x + 2, y) +
                                 S_y[1][0] * getGrayscalePixel(this.rawImage, x, y + 1) + S_y[1][1] * getGrayscalePixel(this.rawImage, x + 1, y + 1) + S_y[1][2] * getGrayscalePixel(this.rawImage, x + 2, y + 1) +
                                 S_y[2][0] * getGrayscalePixel(this.rawImage, x, y + 2) + S_y[2][1] * getGrayscalePixel(this.rawImage, x + 1, y + 2) + S_y[2][2] * getGrayscalePixel(this.rawImage, x + 2, y + 2);
 
-                int sum = Math.abs(pixelValueX) + Math.abs(pixelValueY);
+                int rgb = (int) Math.sqrt(pixelValueX*pixelValueX + pixelValueY*pixelValueY);
 
-                if (sum > 255) {
-                    sum = 255;
+                if (rgb > maxScale) {
+                    maxScale = rgb;
                 }
+                pixels.add(rgb);
 
 
             }
         }
+        for(int y = 0; y < height - 2; y++){
+
+            for(int x = 0; x < width - 2; x++){
+                int index = y * (width - 2) + x;
+
+                int scaled = pixels.get(index) * 255 /maxScale;
+                int calculateBrightness = (int)(scaled * this.brightness);
+                int restrict = (calculateBrightness > 255)? 255: calculateBrightness;
+
+                finalImage.getRaster().setSample(x,y,0,restrict);
+
+            }
+        }
+
+        setFinalImage(finalImage);
 
     }
 
@@ -67,11 +88,15 @@ public class DICOMFrame {
     }
 
     public BufferedImage getEdges(double brightness) {
-        if(!this.detectEdgesCompleted || this.detectEdgesCompleted && brightness != this.brightness) {
+        if(!this.detectEdgesCompleted || brightness != this.brightness) {
             this.brightness = brightness;
             detectEdges();
         }
 
-        return this.imageEdges;
+        return this.finalImage;
+    }
+
+    public void setFinalImage(BufferedImage finalImage) {
+        this.finalImage = finalImage;
     }
 }
