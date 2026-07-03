@@ -16,11 +16,10 @@ public class DICOMImage {
     public String name;
     public  DICOMFrame[] allDicomFrames;
     public enum ImageType {ORIGINAL, EDGE}
+    private int countOfImages;
 
     public DICOMImage(File infile, String name) throws DicomException, IOException {
         this.name = name;
-
-        int countOfImages;
 
        AttributeList attributeList = new AttributeList();
        attributeList.read(infile);
@@ -34,6 +33,7 @@ public class DICOMImage {
             DICOMFrame dicomFrame = new DICOMFrame(sourceImage.getBufferedImage(i));
             this.allDicomFrames[i] = dicomFrame;
         }
+        System.out.println(countOfImages);
 
 
 
@@ -63,4 +63,14 @@ public class DICOMImage {
 
     private void writeImage(BufferedImage image, String filename) {
     }
+
+    public DICOMFrame getFrame(int num){
+        return this.allDicomFrames[num];
+    }
+
+    public int getNumFrames(){
+
+        return this.countOfImages;
+    }
+
 }

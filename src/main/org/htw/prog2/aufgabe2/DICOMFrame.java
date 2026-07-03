@@ -41,6 +41,8 @@ public class DICOMFrame {
 
         BufferedImage finalImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 
+        long currentTime = System.currentTimeMillis();
+
         for(int y = 0; y < height-2; y++){
 
             for(int x = 0; x < width-2; x++) {
@@ -63,8 +65,12 @@ public class DICOMFrame {
                 pixels.add(rgb);
 
 
+
             }
         }
+
+        System.out.printf("Took %s ms", System.currentTimeMillis()-currentTime);
+
         for(int y = 0; y < height - 2; y++){
 
             for(int x = 0; x < width - 2; x++){
