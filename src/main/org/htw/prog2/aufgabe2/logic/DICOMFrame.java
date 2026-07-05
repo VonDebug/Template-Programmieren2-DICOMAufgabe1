@@ -1,8 +1,9 @@
-package org.htw.prog2.aufgabe2;
+package org.htw.prog2.aufgabe2.logic;
 
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 
 public class DICOMFrame {
     private static final int[][] S_x = new int[][]{new int[]{-1,0,1}, new int[]{-2,0,2}, new int[]{-1,0,1}};
@@ -34,7 +35,7 @@ public class DICOMFrame {
 
     private void detectEdges() {
         int maxScale = 255;
-        ArrayList<Integer> pixels = new ArrayList<>();
+        List<Integer> pixels = new ArrayList<>();
 
         int width = this.rawImage.getWidth();
         int height = this.rawImage.getHeight();

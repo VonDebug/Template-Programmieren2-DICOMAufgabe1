@@ -1,4 +1,4 @@
-package org.htw.prog2.aufgabe2;
+package org.htw.prog2.aufgabe2.logic;
 
 
 import com.pixelmed.dicom.AttributeList;

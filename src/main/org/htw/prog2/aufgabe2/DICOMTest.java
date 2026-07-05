@@ -2,6 +2,8 @@ package org.htw.prog2.aufgabe2;
 
 
 import com.pixelmed.dicom.DicomException;
+import org.htw.prog2.aufgabe2.ui.MainFrame;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +14,7 @@ public class DICOMTest {
         File file = new File(infilename);
         String name = "lol";
         MainFrame mainFrame = new MainFrame();
-        //DICOMImage dicomImage = new DICOMImage(file, name);
+
         //dicomImage.writeFrames(0,2, DICOMImage.ImageType.EDGE,5.0);
     }
 }
