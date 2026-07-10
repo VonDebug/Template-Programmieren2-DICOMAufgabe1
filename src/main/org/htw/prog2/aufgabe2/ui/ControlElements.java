@@ -8,7 +8,7 @@ import java.awt.*;
 public class ControlElements extends JPanel {
 
     private int countOfImages;
-
+    private boolean showEdges = false;
     private JLabel frameIndexLabel;
 
     public ControlElements(){
@@ -25,10 +25,18 @@ public class ControlElements extends JPanel {
         JSlider jSlider = new JSlider(SwingConstants.HORIZONTAL,1, this.countOfImages, 1);
         jSlider.addChangeListener(e -> {
             this.frameIndexLabel.setText("Bild " + jSlider.getValue() + "/" + this.countOfImages);
-            Manager.getInstance().setDetailedFrame(Manager.getInstance().getDicomImage().getFrame(jSlider.getValue() - 1), false);
+            Manager.getInstance().setDetailedFrame(Manager.getInstance().getDicomImage().getFrame(jSlider.getValue() - 1), this.showEdges);
         });
 
         this.add(jSlider);
+
+        JCheckBox jCheckBox = new JCheckBox("Kanten anzeigen");
+        jCheckBox.addItemListener(e -> {
+            this.showEdges = !this.showEdges;
+        });
+        this.add(jCheckBox);
+
+
 
 
     }
