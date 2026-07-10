@@ -22,7 +22,7 @@ public class SeriesThumbnail extends JPanel {
 
         this.bImage = this.dicomImage.getFrame(0).getImage();
 
-        Graphics2D g = this.bImage.createGraphics();
+        Graphics g = this.bImage.createGraphics();
 
         paintComponent(g);
 
