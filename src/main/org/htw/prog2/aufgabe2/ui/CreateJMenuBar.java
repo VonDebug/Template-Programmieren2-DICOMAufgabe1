@@ -1,6 +1,7 @@
 package org.htw.prog2.aufgabe2.ui;
 
 import com.pixelmed.dicom.DicomException;
+import org.htw.prog2.aufgabe2.Manager;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -27,10 +28,8 @@ public class CreateJMenuBar {
         open.addActionListener(e -> {
             try {
                 instanciateFileChooser();
-            } catch (DicomException ex) {
-                throw new RuntimeException(ex);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+            } catch (DicomException | IOException ex) {
+                JOptionPane.showMessageDialog(null, ex);
             }
         });
 
@@ -55,6 +54,7 @@ public class CreateJMenuBar {
             File infile = chooser.getSelectedFile().getAbsoluteFile();
 
             Manager.getInstance().createDicomImageInstance(infile, nameOfFile);
+
 
 
 

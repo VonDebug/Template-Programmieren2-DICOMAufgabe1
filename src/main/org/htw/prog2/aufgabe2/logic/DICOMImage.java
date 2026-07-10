@@ -13,10 +13,10 @@ import java.io.IOException;
 
 public class DICOMImage {
 
-    public String name;
-    public  DICOMFrame[] allDicomFrames;
+    private String name;
+    private  DICOMFrame[] allDicomFrames;
     public enum ImageType {ORIGINAL, EDGE}
-    private int countOfImages;
+    private int countOfFrames;
 
     public DICOMImage(File infile, String name) throws DicomException, IOException {
         this.name = name;
@@ -25,15 +25,15 @@ public class DICOMImage {
        attributeList.read(infile);
 
         SourceImage sourceImage = new SourceImage(attributeList);
-        countOfImages = sourceImage.getNumberOfBufferedImages();
-        this.allDicomFrames = new DICOMFrame[countOfImages];
+        countOfFrames = sourceImage.getNumberOfBufferedImages();
+        this.allDicomFrames = new DICOMFrame[countOfFrames];
 
-        for(int i = 0; i<countOfImages; i++){
+        for(int i = 0; i< countOfFrames; i++){
 
             DICOMFrame dicomFrame = new DICOMFrame(sourceImage.getBufferedImage(i));
             this.allDicomFrames[i] = dicomFrame;
         }
-        System.out.println(countOfImages);
+        System.out.println(countOfFrames);
 
 
 
@@ -47,7 +47,7 @@ public class DICOMImage {
 
         for(int i = from; i < to; i++){
 
-            File file = new File(i+fileNameConvention);
+            File file = new File(this.name + "_"+i+fileNameConvention);
             if(imageType == ImageType.ORIGINAL){
             ImageIO.write(this.allDicomFrames[i].getImage(), "PNG", file);
 
@@ -55,10 +55,7 @@ public class DICOMImage {
             else{
                 ImageIO.write(this.allDicomFrames[i].getEdges(edgeLightnessCutoff), "PNG", file);
             }
-
         }
-
-
     }
 
     private void writeImage(BufferedImage image, String filename) {
@@ -68,9 +65,16 @@ public class DICOMImage {
         return this.allDicomFrames[num];
     }
 
-    public int getNumFrames(){
 
-        return this.countOfImages;
+    public String getName() {
+        return name;
     }
 
+    public DICOMFrame[] getAllDicomFrames() {
+        return allDicomFrames;
+    }
+
+    public int getCountOfFrames() {
+        return countOfFrames;
+    }
 }

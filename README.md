@@ -1,136 +1,106 @@
-# DICOM - Teilaufgabe 1
+# DICOM-Teilaufgabe 2
 
-Um DICOM-Dateien anzeigen zu können, müssen wir sie zunächst einlesen können. Zudem soll für die Diagnostik eine Kantendetektion angeboten werden - um diese kümmern wir uns direkt mit.
+In dieser Woche beginnen wir, das GUI zur Anzeige der DICOM-Dateien zu implementieren.
 
-## Projektsetup
+Auch hier lohnt es sich, zunächst die komplette Aufgabenstellung zu lesen um die Zusammenhänge und den Programmaufbau zu verstehen, bevor Sie mit der Implementation beginnen, und dann schrittweise vorzugehen (also z. B. zuerst das ```MainFrame``` mit drei ```JLabel```, um zu sehen, dass es ein Fenster gibt und Sie die Labels da sehen, wo diese hingehören; dann um ein ```ImageListPanel```, das nichts außer dem Titel-Label anzeigt erweitern; dann ein ```ImageDetailPanel``` hinzufügen, das einfach nur ein rotes Viereck mit der richtigen Größe zeichnet - und so weiter und so fort).
 
-Bei dem DICOM-Format handelt es sich um ein komplexes Containerformat für Bilddateien (ein Überblick ist z.B. [hier](http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html) zu finden). Um ein solch komplexes Dateiformat einzulesen, bietet sich die Verwendung einer existierenden Bibliothek an - in diesem Fall [das pixelmed DICOM-Toolkit](https://www.pixelmed.com/dicomtoolkit.html). Schauen Sie bitte zunächst in die build.gradle, um sich damit vertraut zu machen.
+Bevor wir beginnen, noch ein Hinweis zu der Implementation von GUIs: Jede ```JComponent``` hat eine Methode ```setBorder```, mit der Sie einen Rahmen definieren können, der um die Komponente herum gezeichnet wird (natürlich nur, wenn Sie ```paintComponent``` entweder nicht überschreiben oder darin ```super.paintComponent(g)``` aufrufen). Ein beispielhafter Aufruf wäre ```setBorder(new LineBorder(Color.GREEN));```. Das ist äußerst hilfreich, wenn Komponenten sich seltsam verhalten, denn dadurch kann man erkennen, wie groß sie im Layout tatsächlich sind.
 
-Das DICOM-Toolkit ist im [Maven-Repository](https://mvnrepository.com/artifact/com.pixelmed/dicom) zu finden. Wir verwenden die Version [20120929](https://mvnrepository.com/artifact/com.pixelmed/dicom/20120929). Auf dieser Seite ist unten der Verweis zu finden, dass sich das Artefakt im Gazelle-Repository befindet. Entsprechend muss die repositories-Liste in build.gradle wie folgt angepasst werden:
+## DICOMImage
 
-```java
-repositories {
-    mavenCentral()
-    maven{
-        url "https://gazelle.ihe.net/nexus/content/repositories/releases/"
-    }
-}
-```
+Erweitern Sie zunächst dafür DICOMImage um die folgenden zwei Hilfsmethoden:
 
-Die Zeile, welche in den dependencies-Bereich eingefügt werden muss, um das Artefakt in dem Projekt zu verwenden, steht im "gradle"-Tab auf der selben Webseite. Angepasst sehen unsere Dependencies nun wie folgt aus:
+* ```public void getFrame(int num)```: Gibt das ```DICOMFrame``` mit der entsprechenden Nummer zurück.
+* ```public int getNumFrames()```: Gibt die Anzahl der frames im dem Bild zurück.
 
-```java
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'com.pixelmed:dicom:20120929'
-}
-```
 
-## Hintergrundinformationen: DICOM-Format
+## GUI
 
-DICOM steht für „Digital Imaging and Communications in Medicine“ und ist ein internationaler Standard für medizinische Bilddaten und die dazugehörigen Metadaten. Er wird vor allem genutzt, damit Geräte und Software verschiedener Hersteller medizinische Bilder wie Röntgen-, CT-, MRT- oder Ultraschallaufnahmen austauschen und gemeinsam verarbeiten können. DICOM ist nicht nur ein Bildformat, sondern verbindet Bild, Beschreibung und Kommunikationsregeln in einem gemeinsamen Standard: Es ist ein sogenanntes Container-Format, in dem eine DICOM-Datei mehrere Elemente wie Metadaten (z.B. Patientendaten, Untersuchungsdatum, Geräteeinstellungen und weitere technische Attribute) oder auch eine Reihe von Bildern (z.B. unterschiedliche Bildtiefen bei einem MRT-Scan) enthalten kann. Alle Daten sind in einer strukturierten Liste von Datenelementen organisiert, die zusammen den Datensatz bilden. Kurz gesagt: DICOM sorgt dafür, dass medizinische Bilddaten standardisiert gespeichert, übertragen und archiviert werden können.
+Implementieren Sie dann die Klassen für das GUI.
 
-## Einlesen von DICOM-Dateien
+### Gesamtüberblick
 
-Der folgende Codeabschnitt zeigt Ihnen, wie die Bilddaten aus einer DICOM-Datei eingelesen werden können (Sie können Beispiele auch selber ergoogeln, beispielsweise [dieses Tutorial](https://saravanansubramanian.com/blog/extractdicomimagedata/)) - wir kümmern uns in diesem Projekt nur um Bildreihen, nicht um die Metadaten dazu:
+Zunächst hier ein Gesamtüberblick über das Layout und wie die einzelnen Komponenten darin zum Einsatz kommen:
 
-```java
-import com.pixelmed.dicom.AttributeList;
-import com.pixelmed.display.SourceImage;
+#### ImageListPanel
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+Das ```ImageListPanel``` steht auf der linken Seite (```BorderLayout.WEST```) und zeigt oben die Überschrift "Bilder" (ein ```JLabel```) sowie die geladene Bildserie und später die markierten Bilder daraus an:
 
-public class DICOMTest {
-    public static void main(String[] args) {
-        String infilename = "data/angiogram1.DCM";
-        BufferedImage image = null;
-        try {
-            AttributeList fileattributes = new AttributeList();
-            // Metadaten der Datei einlesen
-            fileattributes.read(infilename);
-            // Bilddaten einlesen
-            SourceImage dcImage = new SourceImage(fileattributes);
-            // Bild 4 aus Bilddaten in BufferedImage einlesen
-            image = dcImage.getBufferedImage(4);
-        } catch (Exception e) {
-            System.out.println("Error reading image file: " + e.getMessage());
-        }
-        try {
-            ImageIO.write(image, "png", new File("frame4.png"));
-        } catch (IOException e) {
-            System.out.println("Error writing png file: " + e.getMessage());
-        }
+![1](Bilder/GUI_1.png)
 
-    }
-}
-```
+#### SeriesThumbnail
 
-Diesen Code finden Sie auch zum selber-ausprobieren in der Klasse `DICOMTest`.
+Das ```SeriesThumbnail``` wird dem ```ImageListPanel``` hinzugefügt, wenn ein Bild geladen wird:
 
-### Kantendetektion mit dem Sobel-Filter
+![1](Bilder/GUI_2.png)
 
-Neben dem Einlesen von DICOM-Dateien soll auch eine Kantendetektion zur Unterstützung der Diagnostik stattfinden. Dafür verwenden wir einen einfachen Filter, den Sobel-Operator. Dieser addiert und subtrahiert die Werte der direkt über/unter (für die Detektion horizontaler Kanten) bzw. neben (für die Detektion vertikaler Kanten) einem Pixel liegenden Pixel so, dass sich bei starken Veränderungen der Frabintensität große Werte ergeben. Auf Flächen mit ungefähr gleichbleibender Intensität löschen sich hingegen die Werte der umliegenden Pixel aus.
+#### Detailansicht
 
-Zur Veranschaulichung hier die Matrix, nach der die Summierung für die Detektion vertikaler Kanten durchgeführt wird:
+Das ```JLabel``` "Detailansicht" ist einfach nur ein ```JLabel``` das direkt im ```MainFrame``` oben (```BorderLayout.NORTH```) angezeigt wird:
 
-```text
-| 1 0 -1 |
-| 2 0 -2 |
-| 1 0 -1 |
-```
+![1](Bilder/GUI_3.png)
 
-Der Referenzpixel, für den die Kantendetektion durchgeführt wird, wird durch die 0 in der Mitte der Matrix repräsentiert. Die umliegenden Pixel werden mit den umliegenden Werten multipliziert, dann werden alle Werte summiert.
+#### ImageDetailPanel
 
-Die Pixelwerte auf der linken Seite werden also mit 2 (direkt links vom Referenzpixel) bzw. mit 1 (links oben und links unten vom Referenzpixel) multipliziert. Die Pixelwerte auf der rechten Seite werden umgekehrt mit -2 (direkt rechts vom Referenzpixel) bzw. mit -1 (rechts oben und rechts unten vom Referenzpixel) multipliziert.
+Das ```ImageDetailPanel``` liegt direkt im ```MainFrame``` in der Mitte (```BorderLayout.CENTER```) und zeigt das selektierte Bild/Frame an:
 
-Auf einer Fläche mit in etwa gleichbleibender Farbintensität löschen sich also die Werte der Pixel auf der linken Seite mit den Werten der rechten Seite gegenseitig aus, für die Kantenintensität kommt ein Wert nache 0 raus. Sind allerdings die Farbwerte auf der linken Seite des Referenzpixels höher, als die auf der rechten Seite, funktioniert das gegenseitige Auslöschen nicht mehr, und es kommt ein hoher Wert zustande. Umgekehrt entsteht ein negativer Wert, wenn die Farbintensität rechts vom Referenzpixel höher ist, als links.
+![1](Bilder/GUI_4.png)
 
-Die gleiche Matrix kann um 90 Grad gedreht für die Detektion horizontaler Kanten verwendet werden:
 
-```text
-|  1  2  1 |
-|  0  0  0 |
-| -1 -2 -1 |
-```
+#### Kontrollelemente
 
-Eine Detektion von beiden Kantenrichtungen findet statt, indem beide Kantendetektionen (horizontal, ```Gx``` und vertikal, ```Gy```) durchgeführt und die beiden Ergebnisse mit der folgenden Formel kombiniert werden: ```G=sqrt(Gx*Gx + Gy*Gy)```.
+Die Kontrollelemente sind zusammen in einem ```JPanel``` gruppiert, welches direkt im ```MainFrame``` unten (```BorderLayout.SOUTH```) liegt:
 
-Ein Beispielbild einer solchen Kantendetektion ist [hier](https://github.com/hkclki/Sobel-Filter) (mit Beispiel-C-Code) zu sehen:
+![1](Bilder/GUI_5.png)
 
-![Beispiel](Bilder/sobel.png)
 
-Bitte beachten Sie ein paar Implementationsdetails:
+### MainFrame
 
-* Die berechneten Farbwerte können negativ werden - das ergibt keinen Sinn (zumindest nicht für die Darstellung, und wir berechnen hier keine Richtungsinformation), entsprechend sollten Sie für das Kantenbild die Absolutwerte der berechneten Grauwerte verwenden
-* Die Kantendetektion wird auf Grauwerten durchgeführt, Sie müssen Pixel von Farbbildern also zunächst in Grauwerte umrechnen. Der empfundene Grauwert eines RGB-Wertes kann nach der Formel: ```Grauwert = 0.2126*Rotwert + 0.7152*Grünwert + 0.0722*Blauwert``` berechnet werden. Hintegrund ist das durch die unterschiedlichen Rezeptoren im menschlichen Auge hervorgerufene Helligkeitsempfinden.  
-* Sie werden für die Implementation der Kantendetektion als Ergebnis ein Bild im Farbmodus ```BufferedImage.TYPE_BYTE_GRAY``` verwenden, die dort gespeicherten Pixelwerte können also maximal 255 sein. Das Quellbild wird in der Regel ein volles RGB-Bild mit integer-Werten für die Pixel sein, also können die berechneten Kantenwerte viel größer als 255 werden. Sie sollten sich also bei der Berechnung den maximalen berechneten Farbwert merken und diesen nutzen, um alle Werte auf maximal 255 zu skalieren (also mit dem Skalierungsfaktor ```scale = 255/maxValue``` zu multiplizieren) 
+Implementieren Sie eine Klasse ```MainFrame```, die von ```JFrame``` erbt und das Gesamtfenster darstellt. Verwenden Sie hier das ```BorderLayout``` (siehe [Oracle-Dokumentation](https://docs.oracle.com/javase/tutorial/uiswing/layout/border.html)). Sie soll folgende Methoden enthalten (es geht auch ohne, aber das sind Hinweise für Hilfsmethoden, die bei der Kommunikation zwischen den Komponenten helfen und Ihnen bei der Implementation der einzelnen Listener helfen werden):
 
-## DICOMImage: Verwaltung eines DICOM-Bildes
+* Einen Constructor, der das Layout (gerne in Untermethoden organisiert) macht. Es soll dabei zwei Menü-Einträge in dem Menü "Datei" geben:
+    * Öffnen - zeigt einen ```JFileChooser``` zum Laden einer .DCM-Datei an und benachrichtigt entsprechend das ```ImageListPanel``` wenn eine Datei ausgewählt wurde
+    * Beenden - beendet das Programm über ```System.exit(0)```
+* ```public void setDetailFrame(DICOMFrame frame, boolean showEdges)```: Benachrichtigt das ```ImageDetailPanel```, das ein bestimmter ```DICOMFrame``` angezeigt werden soll. Hinweis: An dieser Stelle ist es sinnvoll, ein ```revalidate()``` und ein ```repaint()``` zu machen, um die komplette Anzeige (inklusive der nun veränderten Anzeige des Bildes) zu aktualisieren.
+* ```public void setDetailSeries(DICOMImage image)```: Aktualisiert die Einstellungen des Bilder-Sliders (der als Maximum-Wert die Anzahl der Frames im Bild haben sollte) und setzt die Detailansicht auf den ersten Frame des Bildes (am besten über ```setDetailFrame```).
+* ```public void updateDetailView()```: Setzt (am besten über ```setDetailFrame```) den angezeigten Frame auf den, welcher über den Slider (an den Wert kommt man über ```JSlider.getValue()```) selektiert ist. Aktualisiert außerdem den Text in dem Label neben dem Slider (also "Bild X/Y").
+* ```public void setPreviousDetailFrame()```: Setzt den angezeigten Frame auf den Frame vor dem, der jetzt angezeigt wird. Hinweis: Wenn Sie den Wert eines Sliders programmatisch über ```JSlider.setValue()``` verändern, dann wird der ```ChangeListener``` des ```JSlider``` genau so benachrichtigt, wie wenn die Veränderung durch den Benutzer mit der Maus vorgenommen wird.
+* ```public void setNextDetailFrame()```: Wie ```setPreviousDetailFrame()```, nur dass der nächste und nicht der vorherige Frame angezeigt wird.
 
-Implementieren Sie mit diesem Wissen eine Klasse ```DICOMImage```, die alle Frames eines DICOM-Bildes einliest und verwaltet. Lesen Sie bitte zunächst die Aufgabe bis zum Ende: Es ist sehr empfehlenswert, die Implementation nicht stur in dieser Reihenfolge durchzuführen, sonder stückweise ```DICOMImage``` und ```DICOMFrame``` parallel zu implementieren, so dass man immer testen kann, ob die bisher implementierte Funktionalität auch korrekt ist.
+In ```MainFrame``` sollten Sie auch die ```ActionListener``` für die ```JMenuItem``` und die ```JCheckBox``` neben dem ```JLabel``` "Kanten Anzeigen" implementieren, sowie den ```ChangeListener``` für den ```JSlider``` zur Auswahl des angezeigten Frames.
 
-```DICOMImage``` soll folgende Methoden enthalten:
-* Einen Constructor ```DICOMImage(File infile, String name)```: Bekommt die DICOM-Datei sowie einen Namen als Argumente. Merkt sich den Namen, und liest alle frames aus ```infile``` in eine interne Liste (am besten eine ```ArrayList``` - wir werden immer wieder über den Index auf die frames zugreifen) von ```DICOMFrame``` ein.
-* ```public void writeFrames(int from, int to, boolean original, boolean edges, double edgeLightnessCutoff)```: Speichert die Bilder aus den frames von ```from``` bis ```to``` in Bilddateien. Fall ```original``` ```true``` ist, werden die Originalbilder gespeichert (das Namensschema lautet: <name>_<frame-Nummer>.png). Falls ```edges``` ```true``` ist, werden die Ergebnisse der Kantendetektion mit dem Cutoff ```edgeLightnessCutoff``` ausgegeben (das Namensschema lautet: <name>_<frame-Nummer>_edges.png). Hier empfiehlt es sich sehr, zunächst sowohl in dieser Methode als auch in der ersten Implementation von ```DICOMFrame``` ohne die Kantendetektion zu arbeiten, sondern erst zu überprüfen, ob die eingelesenen frames korrekt als png gespeichert werden.
+Erstellen Sie für die Kontrollelemente unten (die 2 ```JLabel```, den ```JSlider``` und die ```JCheckBox```) ein ```JPanel``` mit einem ```FlowLayout```, welchem Sie die Kontrollelemente hinzufügen. Fügen Sie dann das ganze ```JPanel``` im ```MainFrame``` in ```BorderLayout.SOUTH``` hinzu - dadurch erreichen Sie die Gruppierung der Elemente unten im Fenster.
 
-### DICOMFrame: Ein einzelner frame
+#### ImageListPanel
 
-Implementieren Sie zudem eine Klasse ```DICOMFrame```, die ein einzelnes frame verwaltet. Sie soll folgende Methoden enthalten:
-* Einen Constructor ```public DICOMFrame(BufferedImage image)```: Merkt sich das übergebene BufferedImage.
-* ```public BufferedImage getImage()```: Gibt das Bild des frames zurück
-* ```public BufferedImage getEdges(double brightness)```: Gibt ein ```BufferedImage``` (im Farbmodus ```BufferedImage.TYPE_BYTE_GRAY```) mit den Ergebnissen der Kantendetektion mit dem Skalierungsfaktor ```brightness``` auf dem Bild des frames aus. Falls noch keine Katendetektion durchgeführt wurde oder die letzte Kantendetektion mit einem anderen Skalierungsfaktor durchgeführt wurde, wird zunächst die Kantendetektion mit dem Skalierungsfaktor ```brightness``` durchgeführt. Sonst wird das Ergebnis der letzten Kantendetektion zurückgegeben (die Kantendetektion dauert einen Moment, sie sollte also nicht unnötig mehrmals durchgeführt werden).
+Das ```ImageListPanel``` zeigt das geladene Bild sowie später die markierten Frames daraus an. Es sollte von ```JPanel``` erben.
 
-Der Skalierungsfaktor bei der Kantendetektion ist ein Faktor, mit dem die berechneten Kantenwerte multipliziert werden sollen (nachdem die im Theorieteil beschriebene Skalierung auf Werte von 0-255 durchgeführt wurde). Alle Werte, die danach über 255 liegen, werden wieder auf 255 gesetzt. Dadurch wird es ermöglicht, auch schwache Kanten hervorzuheben.
+Übergeben Sie an den Constructor eine Instanz von ```MainFrame``` (wenn Sie aus dem ```MainFrame``` heraus das ```ImageListPanel``` erstellen, müssen Sie also als Argument ```this``` übergeben). Das ist nötig, damit Sie über die in ```MainFrame``` implementierten Methoden die Anzeige der Bildserie steuern können. In Programmierung 3 werden Sie eine sauberere Methode kennenlernen, diese Kommunikation innerhalb des Programms zu lösen (das Model-View-Control-Designpattern), aber das würde an dieser Stelle zu weit führen.
 
-Es bietet sich zudem an, mindestens die folgenden Hilfsmethoden zu verwenden:
-* ```private void detectEdges()```: Führt die Kantendetektion mit dem letzten angegebenen Skalierungsfaktor durch (den Sie sich ja in ```getEdges``` sowieso merken müssen) und speichert das Ergebnis in einem ```BufferedImage``` (welches Sie dann in ```getEdges``` zurückgeben können).
-* ```private int getGrayscalePixel(BufferedImage image, int x, int y)```: Gibt den Pixel an den Koordinaten ```x``` und ```y``` im Bild ```image``` als Grauwert zurück. Der empfundene Grauwert eines RGB-Wertes kann nach der Formel: ```Grauwert = 0.2126*Rotwert + 0.7152*Grünwert + 0.0722*Blauwert``` berechnet werden. Hintegrund ist das durch die unterschiedlichen Rezeptoren im menschlichen Auge hervorgerufene Helligkeitsempfinden.
+Verwenden Sie in ```ImageListPanel``` ein ```BoxLayout``` (siehe [Oracle-Dokumentation](https://docs.oracle.com/javase/tutorial/uiswing/layout/box.html)) und fügen Sie zunächst ein ```JLabel``` "Bilder" hinzu. Denken Sie daran, dass Sie die Ausrichtung der einzelnen Elemente über ```setAlignmentX()``` und ```setAlignmentY()``` beeinflussen können und die präferierte Größe der Komponente mit ```setPreferredSize()```. Horizontale und vertikale Abstände können Sie im ```BoxLayout``` mit ```Box.createVerticalStrut()``` und ```Box.createHorizontalStrut()``` erzeugen.
 
-## DICOMDiagnostics
+Implementieren Sie in ```ImageListPanel``` eine Methode ```public void setImage(DICOMImage newImage)```, die ein ```SeriesThumbnail``` mit dem ersten Frame des übergebenen ```DICOMImage``` erstellt und dem ```BoxLayout``` hinzufügt. Geben Sie dem ```SeriesThumbnail``` einen ```MouseListener``` der, wenn die Maus geklickt wird, über ```MainFrame.setDetailSeries``` das von dem ```SeriesThumbnail``` angezeigte ```DICOMImage``` anzeigen lässt.
 
-Implementieren Sie zuletzt eine Main-Klasse ```DICOMDiagnostics```, die nur die Datei ```data/angiogram1.DCM``` als ein ```DICOMImage``` einliest und von einem frame Ihrer Wahl sowohl das Originalbild als auch das Ergebnis der Kantendetektion mit einer brightness Ihrer Wahl (es sollten aber Kanten darauf erkennbar sein - und zwar von den Blutgefäßen, nicht einfach nur die umlaufende Kante des Bildes) ausgibt.
+#### SeriesThumbnail
+
+Das ```SeriesThumbnail``` erbt ebenfalls von ```JPanel``` und zeigt einen Thumbnail für ein DICOM-Bild an.
+
+Der Contructor ```public SeriesThumbnail(DICOMImage dicomimage, int size, int border)``` sollte eine auf ```size-2*border```x```size-2*border``` skalierte Version des ersten Frames des übergebenen ```DICOMImage``` speichern. Denken Sie auch hier daran, über ```setPreferredSize``` die Größe zu setzen.
+
+Implementieren Sie zudem die folgenden zwei Hilfsmethoden:
+* ```public void setSelected(boolean selected)```: Merkt sich, ob der Thumbnail aktuell ausgewählt ist oder nicht
+* ```public String getDescription()```: Gibt die Beschreibung der Serie zurück: "Serie (<Anzahl der Frames in der Serie>".
+
+Überschreiben Sie dann die Methode ```public void paintComponent(Graphics g)```: Malen Sie in dieser Methode das im Constructor erstellte skalierte Bild (nicht bei den Koordinaten 0, 0 sondern bei den Koordinaten border, border - dann klebt das Bild nicht am rechten Rand) und schreiben Sie unten die über ```getDescription``` generierte Beschreibung hin. Falls der Thumbnail selektiert ist, malen Sie zudem (mittels ```drawRect()```) einen blauen Rahmen um das Bild.
+
+#### ImageDetailPanel
+
+Das ```ImageDetailPanel``` erbt auch von ```JPanel``` und zeigt einen Frame eines DICOM-Bildes in voller Größe an.
+
+Wie beim ```ImageListPanel``` sollte auch das ```ImageDetailPanel``` im Constructor eine Instanz von ```MainFrame``` erhalten.
+
+Das ```ImageDetailPanel``` braucht neben dem Constructor vorerst nur zwei Methoden:
+* ```public void setDetailFrame(DICOMFrame frame, boolean showEdges)```: Setzt die Nummer des anzuzeigenden Frames und ob das Originalbild oder die Kanten angezeigt werden sollen.
+* ```public void paintComponent(Graphics g)```: Falls noch kein Frame gesetzt wurde, wird nur in schwarzer Schrift "Bitte ein Bild laden" angezeigt. Sonst wird - je nachdem ob ```showEdges``` ```true``` oder ```false``` ist - das Originalbild oder das Ergebnis der Kantendetektion (vorerst nur mit dem Standardwert 10 für brightness) gemalt.
+
+Fügen Sie zuletzt im Constructor dem ```ImageDetailPanel``` einen ```MouseWheelListener``` hinzu der, wenn das Mausrad gedreht wurde, je nach Richtung ```MainFrame.setPreviousDetailFrame()``` oder ```MainFrame.setNextDetailFrame()``` aufruft.

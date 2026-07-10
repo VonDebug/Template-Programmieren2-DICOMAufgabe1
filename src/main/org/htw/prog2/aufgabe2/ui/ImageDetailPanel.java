@@ -3,51 +3,48 @@ package org.htw.prog2.aufgabe2.ui;
 import org.htw.prog2.aufgabe2.logic.DICOMFrame;
 
 import javax.swing.*;
-import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class ImageDetailPanel extends JPanel {
 
-    private JPanel jPanel;
+    private JLabel image = new JLabel();
+    private JLabel noImages = new JLabel("Keine Bildserie ausgewählt");
 
     public ImageDetailPanel(){
-        this.jPanel = new JPanel();
 
-        jPanel.setLayout(new BorderLayout());
-
-        this.jPanel.setBorder(BorderFactory.createEmptyBorder(5,15,0,0));
+        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        this.add(Box.createVerticalStrut(5));
 
 
-        JLabel jLabel = new JLabel("Detailansicht");
-        jLabel.setFont(new Font("Arial", Font.BOLD, 20 ));
-        this.jPanel.add(jLabel, BorderLayout.NORTH);
+        JLabel header = new JLabel("Detailansicht");
+        header.setFont(new Font("Arial", Font.BOLD, 20));
+        this.add(header);
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            JLabel noImages = new JLabel("Keine Bildserie ausgewählt");
-            noImages.setFont(new Font("Arial", Font.BOLD, 30 ));
-            this.jPanel.add(noImages, BorderLayout.CENTER);
+        this.noImages.setFont(new Font("Arial", Font.BOLD, 30 ));
+        this.add(this.noImages);
+        this.noImages.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+
+        setBorder(new LineBorder(Color.BLACK));
         }
+
 
         public void setDetailedFrame(DICOMFrame frame, boolean showEdges){
 
-            BufferedImage bufferedImage;
+        BufferedImage bufferedImage  = (showEdges)? frame.getEdges(10.0) : frame.getImage();
+        this.remove(this.noImages);
 
-        if(showEdges){
-            bufferedImage = frame.getEdges(10.0);
-        }
-        else{
-            bufferedImage = frame.getImage();
-        }
-        Graphics2D g = bufferedImage.createGraphics();
+        this.image.setIcon(new ImageIcon(bufferedImage));
+        this.add(this.image);
+        this.image.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        g.drawImage(bufferedImage, 0,0 ,null);
+        this.revalidate();
+        this.repaint();
 
         }
 
-
-
-    public JPanel getjPanel() {
-        return this.jPanel;
-    }
 }
