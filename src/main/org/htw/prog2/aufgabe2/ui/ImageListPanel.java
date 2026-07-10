@@ -1,11 +1,14 @@
 package org.htw.prog2.aufgabe2.ui;
 
+import org.htw.prog2.aufgabe2.logic.DICOMImage;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class ImageListPanel extends JPanel {
 
     private JPanel jpanel;
+    private SeriesThumbnail seriesThumbnail;
 
     public ImageListPanel(){
         this.jpanel = new JPanel();
@@ -22,7 +25,21 @@ public class ImageListPanel extends JPanel {
 
     }
 
+    public void setThumbnailImage(DICOMImage newImage){
+
+        this.seriesThumbnail = new SeriesThumbnail(newImage, 10, 20);
+        this.jpanel.add(this.seriesThumbnail);
+
+    }
+
+
     public JPanel getJpanel() {
         return jpanel;
     }
+
+    public SeriesThumbnail getSeriesThumbnail() {
+        return seriesThumbnail;
+    }
 }
+
+

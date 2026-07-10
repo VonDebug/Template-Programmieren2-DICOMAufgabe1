@@ -41,7 +41,7 @@ public class ImageDetailPanel extends JPanel {
         }
         Graphics2D g = bufferedImage.createGraphics();
 
-
+        g.drawImage(bufferedImage, 0,0 ,null);
 
         }
 

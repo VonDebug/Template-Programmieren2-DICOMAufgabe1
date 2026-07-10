@@ -57,6 +57,7 @@ public class CreateJMenuBar {
             Manager.getInstance().createDicomImageInstance(infile, nameOfFile);
 
 
+
         }
     }
 
